@@ -8,7 +8,7 @@ import java.time.Instant;
 public record ProgressEvent(
         String jobId,
         JobStatus status,
-        String stage,      // 阶段名（如 "考古学家 Agent"）
+        String stage,      // 阶段或岗位名称（如 "产品经理"）
         String message,    // 人可读消息
         Integer progress,  // 0-100，可空
         Object payload,    // 阶段性负载（如某 Agent 的观点摘要），可空
