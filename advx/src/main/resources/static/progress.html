@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>再活一次 · 复活中…</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/shared.css">
+</head>
+<body x-data="progressPage()" x-init="init()" class="min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-stone-300">
+    <div class="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
+      <div>
+        <div class="text-xs tracking-[0.3em] text-[var(--accent)] uppercase">Resurrect · E「反转」</div>
+        <h1 class="text-2xl md:text-3xl font-black mt-1">再活一次<span class="text-[var(--accent)]">.</span></h1>
+        <div class="text-xs text-stone-500 mt-1">从被放弃的项目里，找出仍然活着的部分</div>
+      </div>
+      <div class="text-xs text-stone-500 hidden md:block console">
+        <span class="flame">🔥</span> multi-agent
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-8 py-10">
+
+    <section class="fade-in">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-xs tracking-widest text-stone-500">JOB · <span x-text="jobId"></span></div>
+          <div class="text-xl font-bold" x-text="progressTitle"></div>
+        </div>
+        <div class="text-3xl font-black text-[var(--accent)]"><span x-text="progress"></span>%</div>
+      </div>
+
+      <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden mb-8">
+        <div class="h-2 bg-[var(--accent)] transition-all duration-500" :style="`width:${progress}%`"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Timeline -->
+        <div class="bg-white border border-stone-200 rounded-lg p-5 max-h-[500px] overflow-y-auto">
+          <div class="text-xs tracking-widest text-stone-500 mb-3">TIMELINE</div>
+          <template x-for="(e,i) in events" :key="i">
+            <div class="mb-3 fade-in">
+              <div class="flex items-baseline gap-2">
+                <span class="tag-agent" x-text="e.stage"></span>
+                <span class="text-xs text-stone-400" x-text="formatTime(e.timestamp)"></span>
+              </div>
+              <div class="text-sm mt-1" x-text="e.message"></div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Agent Cards -->
+        <div class="space-y-4">
+          <template x-for="agent in ['考古学家','验尸官','拾荒者','改造家']" :key="agent">
+            <div class="bg-white border border-stone-200 rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <div class="font-bold" x-text="agent"></div>
+                <div class="text-xs" :class="opinions[agent] ? 'text-green-600' : 'text-stone-400'"
+                     x-text="opinions[agent] ? '已回复' : (agentActive===agent ? '思考中…' : '待机')"></div>
+              </div>
+              <div class="text-sm text-stone-600 mt-2" x-show="opinions[agent]"
+                   x-text="opinions[agent] ? opinions[agent].summary : ''"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <a href="/" class="text-xs text-stone-400 hover:text-[var(--accent)]">← 取消并返回首页</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-stone-300 mt-10">
+    <div class="max-w-6xl mx-auto px-8 py-6 text-xs text-stone-500 flex flex-col md:flex-row md:justify-between gap-2">
+      <div>再活一次 · Digital Project Resurrection System · AdventureX 2026</div>
+      <div class="console"></div>
+    </div>
+  </footer>
+
+<script>
+function progressPage() {
+  return {
+    jobId: null,
+    events: [],
+    progress: 0,
+    progressTitle: '正在开始…',
+    opinions: {},        // agentName -> opinion payload
+    agentActive: null,
+    _es: null,
+
+    init() {
+      const params = new URLSearchParams(location.search);
+      this.jobId = params.get('jobId');
+      if (!this.jobId) {
+        alert('缺少 jobId，回到首页重新上传');
+        location.href = '/';
+        return;
+      }
+      this.subscribe();
+    },
+
+    subscribe() {
+      if (this._es) this._es.close();
+      const es = new EventSource(`/api/analyze/${this.jobId}`);
+      this._es = es;
+      es.addEventListener('progress', (evt) => {
+        const e = JSON.parse(evt.data);
+        this.events.unshift(e);
+        if (typeof e.progress === 'number') this.progress = e.progress;
+        this.progressTitle = e.message;
+
+        if (['考古学家','验尸官','拾荒者','改造家'].includes(e.stage)) {
+          if (e.message && e.message.includes('正在')) this.agentActive = e.stage;
+          if (e.payload && e.payload.summary) {
+            this.opinions[e.stage] = e.payload;
+          }
+        }
+
+        if (e.status === 'DONE') {
+          es.close();
+          this.goResult();
+        } else if (e.status === 'FAILED') {
+          es.close();
+          alert('复活失败：' + (e.message || '未知错误'));
+        }
+      });
+      es.onerror = () => {
+        // SSE 中断，尝试直接拉一次结果；若已完成则跳转
+        setTimeout(() => this.pollOnce(), 800);
+      };
+    },
+
+    async pollOnce() {
+      try {
+        const r = await fetch(`/api/result/${this.jobId}`);
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.status === 'DONE') this.goResult();
+      } catch (_) { /* ignore */ }
+    },
+
+    goResult() {
+      location.href = `/result.html?jobId=${encodeURIComponent(this.jobId)}`;
+    },
+
+    formatTime(iso) {
+      try { return new Date(iso).toLocaleTimeString('zh-CN', { hour12: false }); }
+      catch(_) { return ''; }
+    }
+  };
+}
+</script>
+</body>
+</html>
