@@ -1,0 +1,52 @@
+:root {
+  --bg: #0e0d0c;
+  --paper: #f6f1e8;
+  --ink: #1a1815;
+  --accent: #e0451f;
+  --dim: #8a827a;
+}
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+.drop-zone {
+  border: 2px dashed #c4b8a6;
+  background: rgba(224, 69, 31, 0.02);
+  transition: all 0.2s ease;
+}
+.drop-zone.drag {
+  border-color: var(--accent);
+  background: rgba(224, 69, 31, 0.06);
+}
+.console {
+  font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+.flame {
+  animation: flicker 1.4s infinite ease-in-out;
+  display: inline-block;
+}
+@keyframes flicker {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(-1px); }
+}
+.tag-agent {
+  border: 1px solid var(--ink);
+  padding: 1px 6px;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
