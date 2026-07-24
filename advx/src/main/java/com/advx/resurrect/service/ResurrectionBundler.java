@@ -37,12 +37,18 @@ public class ResurrectionBundler {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ROOT)
                     .withZone(ZoneId.systemDefault());
 
-    /** 打包，返回 zip 字节。 */
+    /** 打包，返回 zip 字节。使用原始 HTML，无皮肤。 */
     public byte[] bundle(JobState job) throws IOException {
+        return bundle(job, job.getResurrectedHtml() == null ? "" : job.getResurrectedHtml(), "paper");
+    }
+
+    /** 打包，使用调用方指定的（可能已注入皮肤的）HTML。 */
+    public byte[] bundle(JobState job, String bakedHtml, String skin) throws IOException {
         ResurrectionPlan plan = job.getPlan();
         PitchDoc pitch = job.getPitch();
         List<AgentOpinion> opinions = job.getOpinions();
-        String html = job.getResurrectedHtml() == null ? "" : job.getResurrectedHtml();
+        String html = bakedHtml == null ? "" : bakedHtml;
+        String skinLabel = skin == null ? "paper" : skin;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(64 * 1024);
         try (ZipOutputStream zip = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
@@ -51,18 +57,18 @@ public class ResurrectionBundler {
             putEntry(zip, "index.html", html.getBytes(StandardCharsets.UTF_8));
 
             // 2) README.md
-            String readme = buildReadme(job, plan, pitch);
+            String readme = buildReadme(job, plan, pitch, skinLabel);
             putEntry(zip, "README.md", readme.getBytes(StandardCharsets.UTF_8));
 
             // 3) plan.json —— 原始证据包
-            Map<String, Object> planJson = Map.of(
-                    "jobId", job.getJobId(),
-                    "createdAt", TS_FMT.format(job.getCreatedAt()),
-                    "plan", plan == null ? Map.of() : plan,
-                    "pitch", pitch == null ? Map.of() : pitch,
-                    "opinions", opinions == null ? List.of() : opinions,
-                    "htmlFallback", job.isHtmlIsFallback()
-            );
+            Map<String, Object> planJson = new java.util.LinkedHashMap<>();
+            planJson.put("jobId", job.getJobId());
+            planJson.put("createdAt", TS_FMT.format(job.getCreatedAt()));
+            planJson.put("skin", skinLabel);
+            planJson.put("plan", plan == null ? Map.of() : plan);
+            planJson.put("pitch", pitch == null ? Map.of() : pitch);
+            planJson.put("opinions", opinions == null ? List.of() : opinions);
+            planJson.put("htmlFallback", job.isHtmlIsFallback());
             byte[] planBytes = OM.writeValueAsBytes(planJson);
             putEntry(zip, "plan.json", planBytes);
 
@@ -94,7 +100,7 @@ public class ResurrectionBundler {
         zip.closeEntry();
     }
 
-    private String buildReadme(JobState job, ResurrectionPlan plan, PitchDoc pitch) {
+    private String buildReadme(JobState job, ResurrectionPlan plan, PitchDoc pitch, String skin) {
         StringBuilder sb = new StringBuilder(2048);
 
         String title = plan != null ? plan.newProductName() : "复活体";
@@ -106,7 +112,8 @@ public class ResurrectionBundler {
         sb.append("_从「").append(safe(origin)).append("」里复活_\n\n");
         sb.append("- Job ID: `").append(job.getJobId()).append("`\n");
         sb.append("- 复活时间: ").append(TS_FMT.format(job.getCreatedAt())).append("\n");
-        sb.append("- Demo 类型: ").append(job.isHtmlIsFallback() ? "Level 1 兜底卡片" : "Level 2 · AI 现场生成").append("\n\n");
+        sb.append("- Demo 类型: ").append(job.isHtmlIsFallback() ? "Level 1 兜底卡片" : "Level 2 · AI 现场生成").append("\n");
+        sb.append("- 选用皮肤: `").append(safe(skin)).append("`\n\n");
         sb.append("---\n\n");
 
         sb.append("## 快速开始\n\n");

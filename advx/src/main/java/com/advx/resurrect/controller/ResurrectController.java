@@ -6,6 +6,7 @@ import com.advx.resurrect.model.JobStatus;
 import com.advx.resurrect.model.ProgressEvent;
 import com.advx.resurrect.service.AgentOrchestrator;
 import com.advx.resurrect.service.ResurrectionBundler;
+import com.advx.resurrect.service.SkinService;
 import com.advx.resurrect.store.JobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +37,21 @@ public class ResurrectController {
     private final JobStore store;
     private final AgentOrchestrator orchestrator;
     private final ResurrectionBundler bundler;
+    private final SkinService skinService;
 
     public ResurrectController(AppProperties props, JobStore store, AgentOrchestrator orchestrator,
-                               ResurrectionBundler bundler) {
+                               ResurrectionBundler bundler, SkinService skinService) {
         this.props = props;
         this.store = store;
         this.orchestrator = orchestrator;
         this.bundler = bundler;
+        this.skinService = skinService;
+    }
+
+    /** 皮肤列表：给前端渲染选择器。 */
+    @GetMapping(value = "/skins", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> skins() {
+        return ResponseEntity.ok(Map.of("skins", SkinService.SKINS));
     }
 
     /** 上传压缩包，返回 jobId。 */
@@ -136,26 +145,31 @@ public class ResurrectController {
         ));
     }
 
-    /** 直接返回 iframe 用的 HTML（可 srcdoc / src 二选一使用）。 */
+    /** 直接返回 iframe 用的 HTML（可 srcdoc / src 二选一使用）。支持 ?skin=xxx 预置皮肤。 */
     @GetMapping(value = "/demo/{jobId}", produces = MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<String> demo(@PathVariable String jobId) {
+    public ResponseEntity<String> demo(@PathVariable String jobId,
+                                       @RequestParam(value = "skin", required = false) String skin) {
         JobState job = store.get(jobId);
         if (job == null || job.getResurrectedHtml() == null) {
             return ResponseEntity.status(404).contentType(MediaType.TEXT_HTML)
                     .body("<html><body><p>还没准备好</p></body></html>");
         }
-        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(job.getResurrectedHtml());
+        String html = skinService.inject(job.getResurrectedHtml(), skin);
+        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
     /** 一键下载"复活体礼包" zip：index.html + README.md + plan.json + heart.txt。 */
     @GetMapping(value = "/download/{jobId}")
-    public ResponseEntity<byte[]> download(@PathVariable String jobId) {
+    public ResponseEntity<byte[]> download(@PathVariable String jobId,
+                                            @RequestParam(value = "skin", required = false) String skin) {
         JobState job = store.get(jobId);
         if (job == null || job.getResurrectedHtml() == null) {
             return ResponseEntity.notFound().build();
         }
         try {
-            byte[] zipBytes = bundler.bundle(job);
+            String normalized = skinService.normalize(skin);
+            String bakedHtml = skinService.inject(job.getResurrectedHtml(), normalized);
+            byte[] zipBytes = bundler.bundle(job, bakedHtml, normalized);
             String filename = bundler.suggestedFilename(job);
             // 兼容 ASCII fallback + RFC 5987 UTF-8 编码，处理中文文件名
             String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
