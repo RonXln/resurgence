@@ -5,9 +5,11 @@ import com.advx.resurrect.model.JobState;
 import com.advx.resurrect.model.JobStatus;
 import com.advx.resurrect.model.ProgressEvent;
 import com.advx.resurrect.service.AgentOrchestrator;
+import com.advx.resurrect.service.ResurrectionBundler;
 import com.advx.resurrect.store.JobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,11 +35,14 @@ public class ResurrectController {
     private final AppProperties props;
     private final JobStore store;
     private final AgentOrchestrator orchestrator;
+    private final ResurrectionBundler bundler;
 
-    public ResurrectController(AppProperties props, JobStore store, AgentOrchestrator orchestrator) {
+    public ResurrectController(AppProperties props, JobStore store, AgentOrchestrator orchestrator,
+                               ResurrectionBundler bundler) {
         this.props = props;
         this.store = store;
         this.orchestrator = orchestrator;
+        this.bundler = bundler;
     }
 
     /** 上传压缩包，返回 jobId。 */
@@ -138,6 +145,29 @@ public class ResurrectController {
                     .body("<html><body><p>还没准备好</p></body></html>");
         }
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(job.getResurrectedHtml());
+    }
+
+    /** 一键下载"复活体礼包" zip：index.html + README.md + plan.json + heart.txt。 */
+    @GetMapping(value = "/download/{jobId}")
+    public ResponseEntity<byte[]> download(@PathVariable String jobId) {
+        JobState job = store.get(jobId);
+        if (job == null || job.getResurrectedHtml() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            byte[] zipBytes = bundler.bundle(job);
+            String filename = bundler.suggestedFilename(job);
+            // 兼容 ASCII fallback + RFC 5987 UTF-8 编码，处理中文文件名
+            String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+            String disposition = "attachment; filename=\"resurrected.zip\"; filename*=UTF-8''" + encoded;
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("application/zip"))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
+                    .body(zipBytes);
+        } catch (IOException e) {
+            log.error("打包 zip 失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     private static String sanitize(String filename) {
