@@ -136,6 +136,22 @@ label:focus-within,
   text-decoration: none;
 }
 
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  line-height: 1;
+}
+
+.brand-eyebrow {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
 .brand-mark {
   position: relative;
   width: 2.25rem;
@@ -169,18 +185,49 @@ label:focus-within,
 
 .brand-name {
   display: block;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  margin-top: 0.1rem;
+}
+
+.brand-name-dot {
+  display: inline-block;
+  margin-left: 0.05em;
+  color: #dc2626;
+  font-size: 1.6em;
+  font-weight: 900;
+  line-height: 0;
+  vertical-align: baseline;
+  transform: translateY(0.12em);
+  text-shadow: 0 0 0.4em rgba(220, 38, 38, 0.35);
+  animation: brand-dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes brand-dot-pulse {
+  0%, 100% {
+    transform: translateY(0.12em) scale(1);
+    text-shadow: 0 0 0.4em rgba(220, 38, 38, 0.35);
+  }
+  50% {
+    transform: translateY(0.12em) scale(1.12);
+    text-shadow: 0 0 0.75em rgba(220, 38, 38, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-name-dot {
+    animation: none;
+  }
 }
 
 .brand-subtitle {
   display: block;
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
   color: var(--muted-foreground);
-  font-size: 0.68rem;
-  line-height: 1;
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 
 .header-meta {
