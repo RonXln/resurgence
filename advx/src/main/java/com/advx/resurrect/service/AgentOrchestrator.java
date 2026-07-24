@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -17,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
- * 编排：解压 → 读取 → 多 Agent 并行 → 仲裁 → HTML + Pitch。
+ * 编排：解压 → 读取 → 分阶段岗位协作 → 产品决策 → HTML + Pitch。
  */
 @Service
 public class AgentOrchestrator {
@@ -26,10 +27,11 @@ public class AgentOrchestrator {
 
     private final ArchiveExtractor extractor;
     private final ProjectReader reader;
-    private final ArchaeologistAgent archaeologist;
-    private final CoronerAgent coroner;
-    private final ScavengerAgent scavenger;
-    private final ReformerAgent reformer;
+    private final ProductManagerAgent productManager;
+    private final TechLeadAgent techLead;
+    private final UxDesignerAgent uxDesigner;
+    private final GrowthLeadAgent growthLead;
+    private final DeliveryLeadAgent deliveryLead;
     private final ArbiterAgent arbiter;
     private final HtmlGenerator htmlGen;
     private final PitchGenerator pitchGen;
@@ -44,20 +46,22 @@ public class AgentOrchestrator {
 
     public AgentOrchestrator(ArchiveExtractor extractor,
                              ProjectReader reader,
-                             ArchaeologistAgent archaeologist,
-                             CoronerAgent coroner,
-                             ScavengerAgent scavenger,
-                             ReformerAgent reformer,
+                             ProductManagerAgent productManager,
+                             TechLeadAgent techLead,
+                             UxDesignerAgent uxDesigner,
+                             GrowthLeadAgent growthLead,
+                             DeliveryLeadAgent deliveryLead,
                              ArbiterAgent arbiter,
                              HtmlGenerator htmlGen,
                              PitchGenerator pitchGen,
                              JobStore store) {
         this.extractor = extractor;
         this.reader = reader;
-        this.archaeologist = archaeologist;
-        this.coroner = coroner;
-        this.scavenger = scavenger;
-        this.reformer = reformer;
+        this.productManager = productManager;
+        this.techLead = techLead;
+        this.uxDesigner = uxDesigner;
+        this.growthLead = growthLead;
+        this.deliveryLead = deliveryLead;
         this.arbiter = arbiter;
         this.htmlGen = htmlGen;
         this.pitchGen = pitchGen;
@@ -85,45 +89,42 @@ public class AgentOrchestrator {
                             String.join("/", snapshot.detectedLanguages())),
                     35, snapshotBrief(snapshot)));
 
-            // 3. 4 个 Agent 并行
+            // 3. 岗位协作工作流：先诊断，再设计/增长，最后收敛交付。
             job.setStatus(JobStatus.ANALYZING);
-            store.publish(ProgressEvent.of(jobId, JobStatus.ANALYZING, "分析",
-                    "四位 Agent 已上场：考古学家、验尸官、拾荒者、改造家", 40));
+            store.publish(ProgressEvent.of(jobId, JobStatus.ANALYZING, "工作流",
+                    "第一阶段：产品经理与技术负责人并行诊断", 40));
+            List<AgentOpinion> discovery = runStage(job, snapshot,
+                    List.of(productManager, techLead), List.of());
+            store.publish(ProgressEvent.of(jobId, JobStatus.ANALYZING, "工作流",
+                    "第二阶段：UX 设计与增长策略并行展开", 55));
+            List<AgentOpinion> solution = runStage(job, snapshot,
+                    List.of(uxDesigner, growthLead), discovery);
 
-            List<Agent> agents = List.of(archaeologist, coroner, scavenger, reformer);
-            List<CompletableFuture<AgentOpinion>> futures = agents.stream()
-                    .map(a -> CompletableFuture.supplyAsync(() -> {
-                        store.publish(ProgressEvent.tick(jobId, JobStatus.ANALYZING,
-                                a.name(), a.name() + " 正在阅读代码…"));
-                        AgentOpinion op = a.analyze(snapshot);
-                        job.addOpinion(op);
-                        store.publish(ProgressEvent.withPayload(jobId, JobStatus.ANALYZING,
-                                a.name(), a.name() + " 已给出观点", op));
-                        return op;
-                    }, pool))
-                    .toList();
+            List<AgentOpinion> upstream = new ArrayList<>(discovery);
+            upstream.addAll(solution);
+            store.publish(ProgressEvent.of(jobId, JobStatus.ANALYZING, "工作流",
+                    "第三阶段：交付负责人正在收敛 MVP 范围", 70));
+            List<AgentOpinion> delivery = runStage(job, snapshot, List.of(deliveryLead), upstream);
 
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            List<AgentOpinion> opinions = futures.stream()
-                    .map(CompletableFuture::join)
-                    .collect(Collectors.toList());
-            store.publish(ProgressEvent.of(jobId, JobStatus.ANALYZING, "分析", "四位 Agent 全部完成", 65));
+            List<AgentOpinion> opinions = new ArrayList<>(upstream);
+            opinions.addAll(delivery);
+            store.publish(ProgressEvent.of(jobId, JobStatus.ANALYZING, "工作流", "五位负责人已完成协作", 76));
 
             // 4. 仲裁
             job.setStatus(JobStatus.ARBITRATING);
             store.publish(ProgressEvent.of(jobId, JobStatus.ARBITRATING,
-                    "仲裁者", "仲裁者正在从候选里选出唯一的复活点…", 70));
+                    arbiter.name(), "产品负责人正在选择唯一的复活方向…", 80));
             ResurrectionPlan plan = arbiter.arbitrate(snapshot, opinions);
             job.setPlan(plan);
             store.publish(ProgressEvent.of(jobId, JobStatus.ARBITRATING,
-                    "仲裁者",
+                    arbiter.name(),
                     "复活点已选定：%s → 复活为「%s」".formatted(plan.heartTitle(), plan.newProductName()),
-                    80, plan));
+                    86, plan));
 
             // 5. 并行生成 HTML 与 Pitch
             job.setStatus(JobStatus.GENERATING);
             store.publish(ProgressEvent.of(jobId, JobStatus.GENERATING,
-                    "生成", "正在生成复活体 HTML 与企划书…", 85));
+                    "生成", "正在生成复活体 HTML 与企划书…", 90));
 
             CompletableFuture<HtmlGenerator.Result> htmlF =
                     CompletableFuture.supplyAsync(() -> htmlGen.generate(plan), pool);
@@ -148,6 +149,25 @@ public class AgentOrchestrator {
             store.publish(ProgressEvent.tick(jobId, JobStatus.FAILED, "失败",
                     "流程异常：" + e.getMessage()));
         }
+    }
+
+    /** 同一阶段的岗位并行执行；下一阶段只能读取本阶段全部完成后的结论。 */
+    private List<AgentOpinion> runStage(JobState job, ProjectSnapshot snapshot,
+                                        List<Agent> agents, List<AgentOpinion> upstreamOpinions) {
+        List<AgentOpinion> context = List.copyOf(upstreamOpinions);
+        List<CompletableFuture<AgentOpinion>> futures = agents.stream()
+                .map(agent -> CompletableFuture.supplyAsync(() -> {
+                    store.publish(ProgressEvent.tick(job.getJobId(), JobStatus.ANALYZING,
+                            agent.name(), agent.name() + " 正在梳理项目线索…"));
+                    AgentOpinion opinion = agent.analyze(snapshot, context);
+                    job.addOpinion(opinion);
+                    store.publish(ProgressEvent.withPayload(job.getJobId(), JobStatus.ANALYZING,
+                            agent.name(), agent.name() + " 已提交结论", opinion));
+                    return opinion;
+                }, pool))
+                .toList();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        return futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
     }
 
     private static Object snapshotBrief(ProjectSnapshot s) {

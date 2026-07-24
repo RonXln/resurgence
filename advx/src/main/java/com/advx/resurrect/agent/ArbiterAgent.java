@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 仲裁者：读四位 Agent 的观点，选**唯一一个**最有戏的复活点，产出 ResurrectionPlan。
+ * 产品负责人：读五位岗位负责人的观点，选唯一的复活点，产出 ResurrectionPlan。
  */
 @Component
 public class ArbiterAgent {
@@ -28,19 +28,19 @@ public class ArbiterAgent {
         this.llm = llm;
     }
 
-    public String name() { return "仲裁者"; }
+    public String name() { return "产品负责人"; }
 
     public ResurrectionPlan arbitrate(ProjectSnapshot snapshot, List<AgentOpinion> opinions) {
         String opinionsBlock = buildOpinionsBlock(opinions);
         String briefSnapshot = AgentUtils.buildSnapshotBrief(snapshot, 3000);
 
         String system = """
-                你是复活系统的最终仲裁者。四位 Agent（考古学家、验尸官、拾荒者、改造家）已经各自完成分析。
-                你的任务：**只选择一个**最有戏的"复活点"，为它写一份复活方案。
+                你是复活系统的产品负责人。五位岗位负责人（产品经理、技术负责人、UX 设计师、增长负责人、交付负责人）已经按工作流完成分析。
+                你的任务：**只选择一个**最值得交付的"复活点"，为它写一份复活方案。
                 原则：
-                - 优先选择"独立性强 + 可视化好 + 反转张力大"的点。
+                - 同时衡量用户价值、技术可行性、体验辨识度、增长空间和交付成本。
                 - 复活后的产品要**极小、极锋利、能一屏内演示**。
-                - 你的选择必须解释为什么否决其它候选。
+                - 你的选择必须引用岗位结论，并解释为什么舍弃其它候选。
                 - 复活后产品名要有一丝诗意但不夸张，slogan 一句话直击要害。
                 """;
 
@@ -48,7 +48,7 @@ public class ArbiterAgent {
                 【原项目快照（精简）】
                 %s
 
-                【四位 Agent 的观点】
+                【五位岗位负责人的观点】
                 %s
 
                 请**严格按 JSON 输出**（不要 Markdown fence），字段：

@@ -3,7 +3,7 @@ package com.advx.resurrect.model;
 import java.util.List;
 
 /**
- * 仲裁者产出的复活方案。
+ * 产品负责人产出的复活方案。
  */
 public record ResurrectionPlan(
         String projectName,

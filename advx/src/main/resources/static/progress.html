@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>再活一次 · 协作复活中</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    .source-node { width: 88px; height: 88px; border: 2px solid var(--accent); border-radius: 9999px; display:flex; align-items:center; justify-content:center; text-align:center; background:#fff4ef; color:var(--accent); font-weight:800; line-height:1.25; }
+    .work-row { display:grid; grid-template-columns: 92px 28px minmax(180px, .72fr) 34px minmax(280px, 1.4fr); gap:0; align-items:center; min-height:116px; }
+    .root-slot { height:100%; display:flex; justify-content:center; align-items:center; position:relative; }
+    .root-slot::after { content:""; position:absolute; right:0; top:50%; width:24px; height:1px; background:#b9aa9b; }
+    .leader-card, .thought-card { border:1px solid #d8cec2; background:#fffdf9; border-radius:12px; }
+    .leader-card { padding:16px; transition:.35s ease; }
+    .leader-card.active { border-color:var(--accent); box-shadow:0 10px 26px rgba(224,69,31,.15); transform:translateX(4px); }
+    .leader-card.done { border-color:#a9b8a4; }
+    .connector { height:1px; background:#b9aa9b; position:relative; }
+    .connector::after { content:""; position:absolute; right:-1px; top:-3px; width:7px; height:7px; border-top:1px solid #b9aa9b; border-right:1px solid #b9aa9b; transform:rotate(45deg); }
+    .thought-lane { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 0; }
+    .thought-card { min-width:145px; max-width:215px; padding:10px 12px; border-left:3px solid #d8cec2; animation:fadeIn .35s ease-out; }
+    .thought-card.final { border-left-color:var(--accent); background:#fff4ef; }
+    .thought-card.pending { color:#a39a91; border-style:dashed; }
+    .mind-node { border:1px solid #d8cec2; background:#fffdf9; border-radius:10px; padding:12px; }
+    .mind-node.final { border-color:var(--accent); background:#fff4ef; }
+    .mind-line { width:1px; height:18px; background:#b9aa9b; margin:0 auto; }
+    @media (max-width: 900px) { .work-row { grid-template-columns:22px minmax(160px, .7fr) 24px minmax(210px, 1fr); } .root-slot { grid-column:1; } .root-slot .source-node { display:none; } .root-slot::after { width:16px; } }
+    @media (max-width: 640px) { .work-row { grid-template-columns:1fr; gap:8px; padding:16px 0; border-bottom:1px solid #e3dbd0; } .root-slot,.connector { display:none; } .thought-card { max-width:none; flex:1; } }
+  </style>
+</head>
+<body x-data="progressPage()" x-init="init()" class="min-h-screen">
+  <header class="border-b border-stone-300"><div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center"><div><div class="text-xs tracking-[.3em] text-[var(--accent)]">RESURRECT · COLLABORATIVE RECOVERY</div><h1 class="text-3xl font-black mt-1">再活一次<span class="text-[var(--accent)]">.</span></h1></div><div class="text-right text-xs text-stone-500 console">JOB · <span x-text="jobId"></span><div class="text-2xl font-black text-[var(--accent)] mt-1"><span x-text="progress"></span>%</div></div></div></header>
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <div class="flex justify-between gap-4 text-sm mb-2"><span class="font-bold" x-text="progressTitle"></span><span class="text-stone-500" x-text="viewMode === 'map' ? '协作路径已收束' : '负责人协作中'"></span></div>
+    <div class="h-1.5 bg-stone-200 rounded-full overflow-hidden mb-8"><div class="h-full bg-[var(--accent)] transition-all duration-500" :style="`width:${progress}%`"></div></div>
+    <div x-show="missingJob" x-cloak class="mb-6 rounded-lg border border-[var(--accent)] bg-[#fff4ef] p-4 text-sm"><span>该任务已不在当前服务中。</span><a href="/" class="ml-2 font-bold text-[var(--accent)]">重新上传项目 →</a></div>
+
+    <section x-show="viewMode === 'workflow'" class="fade-in">
+      <div class="mb-7"><div class="text-xs tracking-[.24em] text-stone-500">项目协作图</div><p class="text-stone-600 mt-2">项目资料被分发给负责人；每张卡片只展示可见的工作节点与岗位结论。</p></div>
+      <div class="space-y-2">
+        <template x-for="(leader, index) in leaders" :key="leader.id">
+          <div class="work-row">
+            <div class="root-slot"><div x-show="index === 2" class="source-node">项目<br>资料</div></div>
+            <div class="connector"></div>
+            <article class="leader-card" :class="leader.state === 'active' ? 'active' : (leader.state === 'done' ? 'done' : '')">
+              <div class="flex justify-between gap-2"><div><div class="text-[11px] tracking-widest text-stone-500" x-text="leader.phase"></div><div class="text-lg font-bold mt-1" x-text="leader.name"></div></div><span class="text-xs" :class="statusClass(leader)" x-text="statusText(leader)"></span></div>
+              <div class="text-xs text-stone-500 mt-2" x-text="leader.role"></div>
+            </article>
+            <div class="connector"></div>
+            <div class="thought-lane">
+              <template x-if="leader.thoughts.length === 0"><div class="thought-card pending text-xs">等待项目资料与上游输入</div></template>
+              <template x-for="(thought, i) in leader.thoughts" :key="i"><div class="thought-card" :class="thought.kind === 'final' ? 'final' : ''"><div class="text-[10px] tracking-wider text-stone-400" x-text="thought.kind === 'final' ? '岗位结论' : '分析节点' "></div><div class="text-xs leading-relaxed mt-1" x-text="thought.message"></div></div></template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <section x-show="viewMode === 'map'" x-cloak class="fade-in max-w-xl mx-auto text-center py-4"><div class="text-xs tracking-[.24em] text-[var(--accent)]">COLLABORATION MINDMAP</div><h2 class="text-3xl font-black mt-3">复活方案已收束</h2><p class="text-sm text-stone-600 mt-2">按实际完成时间回放这次协作决策。</p><div class="mt-7"><template x-for="(leader,i) in orderedLeaders()" :key="leader.id"><div><div class="mind-node text-left" :class="leader.id === 'product-owner' ? 'final' : ''"><div class="flex justify-between"><div><div class="text-xs text-stone-500" x-text="leader.phase"></div><div class="font-bold mt-1" x-text="leader.name"></div></div><span class="text-xs text-stone-400" x-text="formatTime(leader.completedAt)"></span></div><div class="text-sm text-stone-600 mt-2" x-text="leader.summary || '已完成岗位结论'"></div></div><div x-show="i < orderedLeaders().length - 1" class="mind-line"></div></div></template></div><div class="mt-7"><button x-show="pipelineDone" @click="goResult()" class="rounded-lg bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white hover:opacity-90">查看复活demo →</button><div x-show="!pipelineDone" class="text-xs text-stone-400">正在等待交付产物生成…</div></div></section>
+    <div class="mt-8 text-center"><a href="/" class="text-xs text-stone-400 hover:text-[var(--accent)]">← 取消并返回首页</a></div>
+  </main>
+<script>
+function progressPage() { return {
+  jobId:null, progress:0, progressTitle:'正在建立协作流程…', viewMode:'workflow', pipelineDone:false, missingJob:false, _es:null, seenEvents:new Set(),
+  leaders:[
+    {id:'pm',name:'产品经理',role:'还原用户问题与 MVP 方向',phase:'第一阶段 · 产品诊断',state:'waiting',thoughts:[],completedAt:null,summary:''},
+    {id:'tech',name:'技术负责人',role:'评估资产、技术债与实现边界',phase:'第一阶段 · 技术诊断',state:'waiting',thoughts:[],completedAt:null,summary:''},
+    {id:'ux',name:'UX 设计师',role:'定义核心流程与体验瞬间',phase:'第二阶段 · 体验方案',state:'waiting',thoughts:[],completedAt:null,summary:''},
+    {id:'growth',name:'增长负责人',role:'判断定位与首个增长切口',phase:'第二阶段 · 增长策略',state:'waiting',thoughts:[],completedAt:null,summary:''},
+    {id:'delivery',name:'交付负责人',role:'收敛范围、风险与 MVP',phase:'第三阶段 · 交付收敛',state:'waiting',thoughts:[],completedAt:null,summary:''},
+    {id:'product-owner',name:'产品负责人',role:'选择唯一复活方向并完成决策',phase:'最终阶段 · 产品决策',state:'waiting',thoughts:[],completedAt:null,summary:''}
+  ],
+  legacyNames:{'考古学家':'产品经理','验尸官':'技术负责人','拾荒者':'UX 设计师','改造家':'增长负责人','仲裁者':'产品负责人'},
+  init(){ this.jobId=new URLSearchParams(location.search).get('jobId'); if(!this.jobId){location.href='/';return;} this.subscribe(); },
+  subscribe(){ const es=new EventSource(`/api/analyze/${this.jobId}`); this._es=es; es.addEventListener('progress',evt=>this.consume(JSON.parse(evt.data))); es.onerror=()=>setTimeout(()=>this.pollOnce(),800); },
+  leaderFor(stage){ return this.leaders.find(x=>x.name===(this.legacyNames[stage]||stage)); },
+  consume(e){ const key=[e.timestamp,e.stage,e.message,e.status].join('|'); if(this.seenEvents.has(key))return; this.seenEvents.add(key); if(typeof e.progress==='number')this.progress=e.progress; this.progressTitle=e.message||this.progressTitle; const leader=this.leaderFor(e.stage); if(leader){const final=Boolean(e.payload)||(e.message||'').includes('已提交')||(e.message||'').includes('已选定'); leader.thoughts.push({message:e.message||'正在处理项目资料',kind:final?'final':'step'}); if(final){leader.state='done';leader.completedAt=e.timestamp;leader.summary=e.payload?.summary||e.payload?.heartWhy||e.message;}else leader.state='active';} if(e.status==='DONE')this.handleDone(); if(e.status==='FAILED'){this.close();alert('复活失败：'+(e.message||'未知错误'));} },
+  async handleDone(){ if(this.pipelineDone)return; this.pipelineDone=true; await this.hydrateResult(); this.enterMindmap(); },
+  async hydrateResult(){ try{const r=await fetch(`/api/result/${this.jobId}`);if(!r.ok)return;const data=await r.json();(data.opinions||[]).forEach((op,i)=>{const leader=this.leaderFor(op.agentName);if(!leader)return;leader.state='done';leader.completedAt||=(new Date(Date.now()+i)).toISOString();leader.summary=op.summary||leader.summary;if(!leader.thoughts.some(t=>t.kind==='final'))leader.thoughts.push({message:op.summary||'已提交岗位结论',kind:'final'});});if(data.plan){const owner=this.leaderFor('产品负责人');owner.state='done';owner.completedAt||=(new Date(Date.now()+10)).toISOString();owner.summary=data.plan.heartWhy||data.plan.newProductName||'已完成最终决策';if(!owner.thoughts.some(t=>t.kind==='final'))owner.thoughts.push({message:owner.summary,kind:'final'});}}catch(_){} },
+  async pollOnce(){try{const r=await fetch(`/api/result/${this.jobId}`);if(r.status===404){this.missingJob=true;this.progressTitle='任务已失效，请重新上传';this.close();return;}if(r.ok&&(await r.json()).status==='DONE')this.handleDone();}catch(_){}},
+  orderedLeaders(){return this.leaders.filter(x=>x.completedAt).sort((a,b)=>new Date(a.completedAt)-new Date(b.completedAt));},
+  statusText(x){return x.state==='done'?'已完成':x.state==='active'?'分析中':'等待输入';}, statusClass(x){return x.state==='done'?'text-green-700':x.state==='active'?'text-[var(--accent)]':'text-stone-400';},
+  enterMindmap(){if(this.viewMode==='map')return;this.viewMode='map';},
+  goResult(){this.close();location.href=`/result.html?jobId=${encodeURIComponent(this.jobId)}`;}, close(){if(this._es){this._es.close();this._es=null;}},
+  formatTime(v){try{return new Date(v).toLocaleTimeString('zh-CN',{hour12:false});}catch(_){return '';}}
+};}
+</script>
+</body>
+</html>

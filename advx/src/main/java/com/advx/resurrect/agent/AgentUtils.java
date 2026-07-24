@@ -62,6 +62,25 @@ public final class AgentUtils {
         return sb.toString();
     }
 
+    /** 将前序岗位结论压缩为后续岗位可直接引用的上下文。 */
+    public static String buildOpinionsBrief(List<AgentOpinion> opinions) {
+        if (opinions == null || opinions.isEmpty()) {
+            return "（暂无上游结论；请独立完成第一轮诊断。）";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (AgentOpinion opinion : opinions) {
+            sb.append("【").append(opinion.agentName()).append("】\n")
+                    .append(opinion.summary()).append('\n');
+            if (opinion.candidates() != null) {
+                for (AgentOpinion.Candidate candidate : opinion.candidates()) {
+                    sb.append("- ").append(candidate.title()).append("：")
+                            .append(candidate.rationale()).append('\n');
+                }
+            }
+        }
+        return sb.toString();
+    }
+
     /** 尝试从 LLM 返回中解析出 AgentOpinion；解析失败则返回一个降级 Opinion。 */
     public static AgentOpinion parseOpinion(String agentName, String role, String rawJson) {
         try {

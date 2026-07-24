@@ -24,8 +24,9 @@ public abstract class BaseAgent implements Agent {
     protected int snapshotBudget() { return 8000; }
 
     @Override
-    public AgentOpinion analyze(ProjectSnapshot snapshot) {
+    public AgentOpinion analyze(ProjectSnapshot snapshot, List<AgentOpinion> upstreamOpinions) {
         String brief = AgentUtils.buildSnapshotBrief(snapshot, snapshotBudget());
+        String upstream = AgentUtils.buildOpinionsBrief(upstreamOpinions);
         String user = """
                 以下是一个被放弃的项目的自动化快照。请以你的角色分析它，并**严格按 JSON 输出**，不要包裹任何 Markdown fence，字段：
                 {
@@ -41,7 +42,10 @@ public abstract class BaseAgent implements Agent {
 
                 === 项目快照 ===
                 %s
-                """.formatted(brief);
+
+                === 上游岗位结论 ===
+                %s
+                """.formatted(brief, upstream);
 
         String raw = llm.chatJson(List.of(
                 DeepSeekClient.Message.system(systemPrompt()),
