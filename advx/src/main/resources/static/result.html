@@ -3,214 +3,240 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fafafa">
   <title>再活一次 · 复活体</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/shared.css?v=20260724-ui3">
 </head>
-<body x-data="resultPage()" x-init="init()" class="min-h-screen">
-
-  <!-- Header -->
-  <header class="border-b border-stone-300">
-    <div class="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
-      <div>
-        <div class="text-xs tracking-[0.3em] text-[var(--accent)] uppercase">Resurrect · E「反转」</div>
-        <h1 class="text-2xl md:text-3xl font-black mt-1">再活一次<span class="text-[var(--accent)]">.</span></h1>
-        <div class="text-xs text-stone-500 mt-1">从被放弃的项目里，找出仍然活着的部分</div>
-      </div>
-      <div class="text-xs text-stone-500 hidden md:block console">
-        <span class="flame">🔥</span> multi-agent
+<body x-data="resultPage()" x-init="init()" class="page-shell">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="/" class="brand" aria-label="返回再活一次首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 3v18M7 8.5A5 5 0 0 1 12 4a5 5 0 0 1 5 4.5c0 3.7-5 5.1-5 8.5"/>
+            <path d="m8.5 14.5 3.5 3 3.5-3"/>
+          </svg>
+        </span>
+        <span>
+          <span class="brand-name">再活一次</span>
+          <span class="brand-subtitle">Resurrection Report</span>
+        </span>
+      </a>
+      <div class="header-meta">
+        <span class="ui-badge">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="header-label">方案已生成</span>
+        </span>
+        <span class="ui-badge ui-badge-primary">Resurrected</span>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-8 py-10">
-
+  <main class="page-main result-main">
     <section class="fade-in">
-      <div x-show="loading" class="py-24 text-center text-stone-500">
-        <span class="flame">🔥</span> 载入复活体…
+      <div x-show="loading" class="ui-card loading-panel" aria-live="polite">
+        <div>
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="card-heading">正在载入复活体</div>
+          <div class="muted-copy text-sm mt-2">整理 Demo、企划书与协作证据…</div>
+        </div>
       </div>
 
       <template x-if="plan">
-        <div>
-
-          <!-- Hero -->
-          <div class="text-center py-10 border-b border-stone-300">
-            <div class="text-xs tracking-[0.4em] text-[var(--accent)] uppercase">RESURRECTED</div>
-            <h2 class="text-4xl md:text-6xl font-black mt-3" x-text="plan.newProductName"></h2>
-            <p class="text-lg text-stone-600 mt-3" x-text="plan.newProductSlogan"></p>
-            <div class="mt-2 text-sm text-stone-400">
-              从 <span class="text-stone-700 font-medium" x-text="plan.projectName"></span> 里复活
+        <div class="result-stack">
+          <section class="ui-card result-hero">
+            <span class="ui-badge ui-badge-primary">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="m12 3-1.9 4.9L5 10l5.1 2.1L12 17l1.9-4.9L19 10l-5.1-2.1L12 3Z"/>
+              </svg>
+              Resurrection complete
+            </span>
+            <h1 class="result-title" x-text="plan.newProductName"></h1>
+            <p class="result-slogan" x-text="plan.newProductSlogan"></p>
+            <div class="result-origin">
+              从 <strong x-text="plan.projectName"></strong> 中重新生长
             </div>
-          </div>
+          </section>
 
-          <!-- Death Diagnosis -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-10 border-b border-stone-300">
-            <div>
-              <div class="text-xs tracking-widest text-stone-500 mb-2">死亡诊断书</div>
-              <div class="prose text-stone-700 leading-relaxed whitespace-pre-wrap" x-text="plan.deathDiagnosis"></div>
-            </div>
-            <div>
-              <div class="text-xs tracking-widest text-stone-500 mb-2">仍在跳动的心脏</div>
-              <div class="border-l-4 border-[var(--accent)] pl-4">
-                <div class="text-2xl font-bold" x-text="plan.heartTitle"></div>
-                <div class="text-xs text-stone-500 mt-1">来自 <span class="console" x-text="plan.heartSourceHint"></span></div>
-                <div class="text-stone-700 mt-3 leading-relaxed" x-text="plan.heartWhy"></div>
-              </div>
-              <div class="mt-6">
-                <div class="text-xs tracking-widest text-stone-500 mb-2">卖点</div>
-                <ul class="space-y-1">
-                  <template x-for="s in plan.sellingPoints" :key="s">
-                    <li class="text-stone-700"><span class="text-[var(--accent)]">→</span> <span x-text="s"></span></li>
-                  </template>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Demo -->
-          <div class="py-10 border-b border-stone-300">
-            <div class="flex items-baseline justify-between mb-3">
-              <div>
-                <div class="text-xs tracking-widest text-stone-500">复活后的样子</div>
-                <div class="text-xl font-bold">Live Demo</div>
-              </div>
-              <div class="text-xs" x-text="htmlFallback ? '（Level 1 兜底卡片）' : 'Level 2 · AI 现场生成'"></div>
-            </div>
-
-            <!-- 左：iframe   右：皮肤选择器 -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
-              <div class="lg:col-span-3">
-                <div class="border-4 border-stone-800 rounded-lg overflow-hidden shadow-2xl bg-white">
-                  <iframe x-ref="demoFrame"
-                          :src="`/api/demo/${jobId}?skin=${selectedSkin}`"
-                          sandbox="allow-scripts"
-                          class="w-full"
-                          style="height: 520px;"
-                          @load="pushSkin()"></iframe>
+          <section class="diagnosis-grid" aria-label="项目诊断与核心价值">
+            <article class="ui-card diagnosis-card">
+              <div class="card-icon-title">
+                <span class="card-icon" aria-hidden="true">
+                  <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>
+                </span>
+                <div>
+                  <h2 class="card-heading">死亡诊断书</h2>
+                  <p class="card-kicker">为什么这个项目曾经停下</p>
                 </div>
               </div>
+              <div class="long-copy whitespace-pre-wrap" x-text="plan.deathDiagnosis"></div>
+            </article>
 
-              <aside class="lg:col-span-1">
-                <div class="border border-stone-300 rounded-lg p-4 bg-white">
-                  <div class="text-xs tracking-widest text-stone-500 mb-1">SKIN</div>
-                  <div class="text-sm font-bold mb-3">切换皮肤</div>
-                  <div class="text-xs text-stone-500 mb-3 leading-relaxed">
-                    内核不变，只换外观。选择会同步到 demo，也会随下载压缩包一起带走。
-                  </div>
-                  <div class="space-y-2">
-                    <template x-for="s in skins" :key="s.id">
-                      <button type="button"
-                              @click="chooseSkin(s.id)"
-                              class="w-full text-left px-3 py-2 border rounded transition"
-                              :class="selectedSkin === s.id
-                                        ? 'border-[var(--accent)] bg-stone-50'
-                                        : 'border-stone-200 hover:border-stone-400'">
-                        <div class="flex items-center justify-between">
-                          <div class="text-sm font-bold" x-text="s.label"></div>
-                          <div x-show="selectedSkin === s.id" class="text-xs text-[var(--accent)]">已选</div>
-                        </div>
-                        <div class="text-xs text-stone-500 mt-1" x-text="s.description"></div>
-                      </button>
-                    </template>
-                  </div>
+            <article class="ui-card diagnosis-card diagnosis-card-accent">
+              <div class="card-icon-title">
+                <span class="card-icon" aria-hidden="true">
+                  <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+                </span>
+                <div>
+                  <h2 class="card-heading">仍在跳动的心脏</h2>
+                  <p class="card-kicker">最值得被保留的核心资产</p>
+                </div>
+              </div>
+              <div class="heart-title" x-text="plan.heartTitle"></div>
+              <div class="source-hint">来自 <span class="console" x-text="plan.heartSourceHint"></span></div>
+              <div class="long-copy" x-text="plan.heartWhy"></div>
+              <ul class="selling-points">
+                <template x-for="s in plan.sellingPoints" :key="s">
+                  <li><span class="selling-check">✓</span><span x-text="s"></span></li>
+                </template>
+              </ul>
+            </article>
+          </section>
+
+          <section class="ui-card demo-section" aria-labelledby="demo-title">
+            <div class="demo-section-header">
+              <div>
+                <div class="section-kicker">Live preview</div>
+                <h2 id="demo-title" class="section-title">复活后的样子</h2>
+              </div>
+              <span class="ui-badge" x-text="htmlFallback ? 'Level 1 · 兜底卡片' : 'Level 2 · AI 现场生成'"></span>
+            </div>
+
+            <div class="demo-layout">
+              <div class="browser-frame">
+                <div class="browser-bar" aria-hidden="true">
+                  <span class="browser-dot"></span>
+                  <span class="browser-dot"></span>
+                  <span class="browser-dot"></span>
+                  <span class="browser-address console">localhost · generated-demo</span>
+                </div>
+                <iframe x-ref="demoFrame"
+                        :src="`/api/demo/${jobId}?skin=${selectedSkin}`"
+                        sandbox="allow-scripts"
+                        class="demo-frame"
+                        title="复活项目实时预览"
+                        @load="pushSkin()"></iframe>
+              </div>
+
+              <aside class="ui-card skin-panel" aria-label="Demo 皮肤设置">
+                <div class="skin-panel-title">外观皮肤</div>
+                <div class="skin-panel-copy">内核不变，只切换视觉语言。所选皮肤会一并写入下载礼包。</div>
+                <div class="skin-list">
+                  <template x-for="s in skins" :key="s.id">
+                    <button type="button"
+                            @click="chooseSkin(s.id)"
+                            class="skin-option"
+                            :class="selectedSkin === s.id ? 'selected' : ''"
+                            :aria-pressed="selectedSkin === s.id">
+                      <span class="skin-option-row">
+                        <span class="skin-name" x-text="s.label"></span>
+                        <span x-show="selectedSkin === s.id" class="ui-badge ui-badge-primary">已选择</span>
+                      </span>
+                      <span class="skin-description" x-text="s.description"></span>
+                    </button>
+                  </template>
                 </div>
               </aside>
             </div>
 
-            <div class="mt-4 flex items-center justify-between">
+            <div class="demo-actions">
               <a :href="`/api/download/${jobId}?skin=${selectedSkin}`"
-                 class="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 text-white text-sm font-bold hover:bg-[var(--accent)] transition rounded">
-                ↓ 下载复活体礼包（.zip · 当前皮肤：<span x-text="currentSkinLabel()"></span>）
+                 class="ui-button ui-button-primary">
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+                下载复活体礼包 · <span x-text="currentSkinLabel()"></span>
               </a>
-              <a :href="`/api/demo/${jobId}?skin=${selectedSkin}`" target="_blank"
-                 class="text-sm text-[var(--accent)] hover:underline">↗ 在新窗口打开完整 demo</a>
+              <a :href="`/api/demo/${jobId}?skin=${selectedSkin}`"
+                 target="_blank"
+                 class="ui-button ui-button-outline">
+                在新窗口打开
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+              </a>
             </div>
-            <div class="mt-2 text-xs text-stone-400">
-              礼包内含：<span class="console">index.html</span> · <span class="console">README.md</span> · <span class="console">plan.json</span> · <span class="console">heart.txt</span>
+            <div class="package-note">
+              礼包包含：<span class="console">index.html</span> · <span class="console">README.md</span> ·
+              <span class="console">plan.json</span> · <span class="console">heart.txt</span>
             </div>
-          </div>
+          </section>
 
-          <!-- Pitch + VC -->
           <template x-if="pitch">
-            <div class="py-10">
-              <div class="text-xs tracking-widest text-stone-500 mb-2">复活企划书</div>
-              <div class="text-3xl font-black mb-6" x-text="pitch.oneLiner"></div>
+            <section class="ui-card pitch-section" aria-labelledby="pitch-title">
+              <div class="section-kicker">Resurrection brief</div>
+              <h2 id="pitch-title" class="pitch-one-liner" x-text="pitch.oneLiner"></h2>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div class="text-xs tracking-widest text-stone-500 mb-1">要解决的问题</div>
-                  <div class="text-stone-700" x-text="pitch.problem"></div>
-                </div>
-                <div>
-                  <div class="text-xs tracking-widest text-stone-500 mb-1">解决方案</div>
-                  <div class="text-stone-700" x-text="pitch.solution"></div>
-                </div>
-                <div>
-                  <div class="text-xs tracking-widest text-stone-500 mb-1">目标用户</div>
-                  <div class="text-stone-700" x-text="pitch.targetUser"></div>
-                </div>
-                <div>
-                  <div class="text-xs tracking-widest text-stone-500 mb-1">下一个最小实验</div>
-                  <div class="text-stone-700" x-text="pitch.nextExperiment"></div>
-                </div>
+              <div class="pitch-grid">
+                <article class="pitch-item">
+                  <div class="pitch-item-label">要解决的问题</div>
+                  <div class="pitch-item-copy" x-text="pitch.problem"></div>
+                </article>
+                <article class="pitch-item">
+                  <div class="pitch-item-label">解决方案</div>
+                  <div class="pitch-item-copy" x-text="pitch.solution"></div>
+                </article>
+                <article class="pitch-item">
+                  <div class="pitch-item-label">目标用户</div>
+                  <div class="pitch-item-copy" x-text="pitch.targetUser"></div>
+                </article>
+                <article class="pitch-item">
+                  <div class="pitch-item-label">下一个最小实验</div>
+                  <div class="pitch-item-copy" x-text="pitch.nextExperiment"></div>
+                </article>
               </div>
 
-              <div class="mt-6">
-                <div class="text-xs tracking-widest text-stone-500 mb-2">市场假设</div>
-                <ol class="list-decimal list-inside space-y-1">
+              <div class="assumption-wrap">
+                <div class="card-heading">需要验证的市场假设</div>
+                <ol class="assumption-list">
                   <template x-for="a in pitch.marketAssumptions" :key="a">
-                    <li class="text-stone-700" x-text="a"></li>
+                    <li x-text="a"></li>
                   </template>
                 </ol>
               </div>
 
-              <!-- VC 直通车 -->
-              <div class="mt-10 pt-8 border-t border-stone-300">
-                <div class="text-xs tracking-[0.4em] text-[var(--accent)] uppercase mb-2">VC 直通车 · 让复活体去争一次生的机会</div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="vc-wrap">
+                <div class="section-kicker">VC 直通车</div>
+                <h3 class="section-title">让复活体争取一次真实机会</h3>
+                <div class="vc-grid">
                   <template x-for="v in pitch.vcLinks" :key="v.name">
-                    <a :href="v.url" target="_blank" rel="noopener"
-                       class="block border border-stone-300 rounded-lg p-4 hover:border-[var(--accent)] hover:bg-white transition">
-                      <div class="font-bold" x-text="v.name"></div>
-                      <div class="text-xs text-stone-500 mt-1" x-text="v.note"></div>
-                      <div class="text-xs text-[var(--accent)] mt-2">前往投递 →</div>
+                    <a :href="v.url" target="_blank" rel="noopener" class="ui-card vc-card">
+                      <div class="vc-name" x-text="v.name"></div>
+                      <div class="vc-note" x-text="v.note"></div>
+                      <div class="vc-link">前往投递 <span aria-hidden="true">↗</span></div>
                     </a>
                   </template>
                 </div>
               </div>
-            </div>
+            </section>
           </template>
 
-          <!-- Agent 详情（可展开） -->
-          <div class="py-8 border-t border-stone-300">
+          <section class="ui-card agent-section">
             <details>
-              <summary class="text-sm text-stone-500 hover:text-[var(--accent)]">▶ 展开五位 Agent 的详细观点与证据</summary>
-              <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <summary class="agent-summary">查看五位 Agent 的完整观点与项目证据</summary>
+              <div class="agent-grid">
                 <template x-for="op in opinionsList" :key="op.agentName">
-                  <div class="bg-white border border-stone-200 rounded-lg p-4">
-                    <div class="font-bold" x-text="op.agentName"></div>
-                    <div class="text-xs text-stone-500 italic" x-text="op.role"></div>
-                    <div class="text-sm mt-2" x-text="op.summary"></div>
+                  <article class="agent-card">
+                    <div class="agent-name" x-text="op.agentName"></div>
+                    <div class="agent-role" x-text="op.role"></div>
+                    <div class="agent-opinion" x-text="op.summary"></div>
                     <template x-if="op.evidence && op.evidence.length">
-                      <div class="mt-3 space-y-2">
+                      <div class="evidence-list">
                         <template x-for="ev in op.evidence" :key="ev.quote">
-                          <div class="text-xs bg-stone-50 border-l-2 border-stone-400 pl-2 py-1">
+                          <div class="evidence-item">
                             <div class="console text-stone-500" x-text="ev.filePath"></div>
-                            <div class="italic text-stone-700">"<span x-text="ev.quote"></span>"</div>
+                            <div class="mt-1">“<span x-text="ev.quote"></span>”</div>
                           </div>
                         </template>
                       </div>
                     </template>
-                  </div>
+                  </article>
                 </template>
               </div>
             </details>
-          </div>
+          </section>
 
-          <div class="text-center py-8">
-            <a href="/"
-               class="inline-block px-6 py-3 border-2 border-stone-800 text-stone-800 font-bold hover:bg-stone-800 hover:text-white transition">
+          <div class="result-restart">
+            <a href="/" class="ui-button ui-button-outline">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>
               再复活一个项目
             </a>
           </div>
@@ -219,10 +245,10 @@
     </section>
   </main>
 
-  <footer class="border-t border-stone-300 mt-10">
-    <div class="max-w-6xl mx-auto px-8 py-6 text-xs text-stone-500 flex flex-col md:flex-row md:justify-between gap-2">
-      <div>再活一次 · Digital Project Resurrection System · AdventureX 2026</div>
-      <div class="console"></div>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span>再活一次 · Digital Project Resurrection System</span>
+      <span class="console">AdventureX 2026 · E「反转」</span>
     </div>
   </footer>
 

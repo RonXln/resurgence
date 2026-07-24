@@ -3,80 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fafafa">
   <title>再活一次 · 协作复活中</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="/shared.css">
-  <style>
-    .source-node { width: 88px; height: 88px; border: 2px solid var(--accent); border-radius: 9999px; display:flex; align-items:center; justify-content:center; text-align:center; background:#fff4ef; color:var(--accent); font-weight:800; line-height:1.25; }
-    .work-row { display:grid; grid-template-columns: 92px 28px minmax(180px, .72fr) 34px minmax(180px, .82fr) 28px minmax(190px, .82fr) 28px minmax(230px, 1.05fr); gap:0; align-items:center; min-height:116px; }
-    .root-slot { height:100%; display:flex; justify-content:center; align-items:center; position:relative; }
-    .root-slot::after { content:""; position:absolute; right:0; top:50%; width:24px; height:1px; background:#b9aa9b; }
-    .leader-card, .thought-card { border:1px solid #d8cec2; background:#fffdf9; border-radius:12px; }
-    .leader-card { padding:16px; transition:.35s ease; }
-    .leader-card.active { border-color:var(--accent); box-shadow:0 10px 26px rgba(224,69,31,.15); transform:translateX(4px); }
-    .leader-card.done { border-color:#a9b8a4; }
-    .connector { height:1px; background:#b9aa9b; position:relative; }
-    .connector::after { content:""; position:absolute; right:-1px; top:-3px; width:7px; height:7px; border-top:1px solid #b9aa9b; border-right:1px solid #b9aa9b; transform:rotate(45deg); }
-    .thought-lane { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 0; }
-    .thought-card { min-width:145px; max-width:215px; padding:10px 12px; border-left:3px solid #d8cec2; animation:fadeIn .35s ease-out; }
-    .thought-card.final { border-left-color:var(--accent); background:#fff4ef; }
-    .thought-card.pending { color:#a39a91; border-style:dashed; }
-    .process-lane { display:flex; flex-direction:column; gap:7px; padding:10px 0; }
-    .process-card { border:1px solid #ddd3c8; border-radius:10px; background:#faf7f2; padding:9px 11px; animation:fadeIn .35s ease-out; }
-    .process-card:last-child { border-color:#e7a28d; background:#fff4ef; }
-    .process-card.pending { color:#a39a91; border-style:dashed; }
-    .conclusion-lane { padding:10px 0; }
-    .conclusion-card { border:1px solid #efb39f; border-left:3px solid var(--accent); border-radius:10px; background:#fff4ef; padding:11px 12px; max-height:190px; overflow-y:auto; animation:fadeIn .35s ease-out; }
-    .conclusion-card.pending { border-color:#d8cec2; border-left-color:#d8cec2; background:#faf7f2; color:#a39a91; border-style:dashed; overflow:visible; }
-    .mind-node { border:1px solid #d8cec2; background:#fffdf9; border-radius:10px; padding:12px; }
-    .mind-node.final { border-color:var(--accent); background:#fff4ef; }
-    .mind-line { width:1px; height:18px; background:#b9aa9b; margin:0 auto; }
-    @media (max-width: 1280px) { .work-row { grid-template-columns:22px minmax(160px, .7fr) 24px minmax(210px, 1fr); } .root-slot { grid-column:1; } .root-slot .source-node { display:none; } .root-slot::after { width:16px; } .process-connector,.conclusion-connector { display:none; } .process-lane,.conclusion-lane { grid-column:4; padding-top:0; } }
-    @media (max-width: 640px) { .work-row { grid-template-columns:1fr; gap:8px; padding:16px 0; border-bottom:1px solid #e3dbd0; } .root-slot,.connector { display:none; } .thought-card { max-width:none; flex:1; } .process-lane,.conclusion-lane { grid-column:auto; } }
-  </style>
+  <link rel="stylesheet" href="/shared.css?v=20260724-ui3">
 </head>
-<body x-data="progressPage()" x-init="init()" class="min-h-screen">
-  <header class="border-b border-stone-300"><div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center"><div><div class="text-xs tracking-[.3em] text-[var(--accent)]">RESURRECT · COLLABORATIVE RECOVERY</div><h1 class="text-3xl font-black mt-1">再活一次<span class="text-[var(--accent)]">.</span></h1></div><div class="text-right text-xs text-stone-500 console">JOB · <span x-text="jobId"></span><div class="text-2xl font-black text-[var(--accent)] mt-1"><span x-text="progress"></span>%</div></div></div></header>
-  <main class="max-w-6xl mx-auto px-6 py-8">
-    <div class="flex justify-between gap-4 text-sm mb-2"><span class="font-bold" x-text="progressTitle"></span><span class="text-stone-500" x-text="viewMode === 'map' ? '协作路径已收束' : '负责人协作中'"></span></div>
-    <div class="h-1.5 bg-stone-200 rounded-full overflow-hidden mb-8"><div class="h-full bg-[var(--accent)] transition-all duration-500" :style="`width:${progress}%`"></div></div>
-    <div x-show="missingJob" x-cloak class="mb-6 rounded-lg border border-[var(--accent)] bg-[#fff4ef] p-4 text-sm"><span>该任务已不在当前服务中。</span><a href="/" class="ml-2 font-bold text-[var(--accent)]">重新上传项目 →</a></div>
+<body x-data="progressPage()" x-init="init()" class="page-shell">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="/" class="brand" aria-label="返回再活一次首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 3v18M7 8.5A5 5 0 0 1 12 4a5 5 0 0 1 5 4.5c0 3.7-5 5.1-5 8.5"/>
+            <path d="m8.5 14.5 3.5 3 3.5-3"/>
+          </svg>
+        </span>
+        <span>
+          <span class="brand-name">再活一次</span>
+          <span class="brand-subtitle">Collaborative Recovery</span>
+        </span>
+      </a>
+      <div class="header-meta">
+        <span class="ui-badge">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="header-label">协作任务</span>
+        </span>
+        <span class="ui-badge console">JOB · <span x-text="jobId"></span></span>
+      </div>
+    </div>
+  </header>
 
-    <section x-show="viewMode === 'workflow'" class="fade-in">
-      <div class="mb-7"><div class="text-xs tracking-[.24em] text-stone-500">项目协作图</div><p class="text-stone-600 mt-2">项目资料被分发给负责人；每张卡片只展示可见的工作节点与岗位结论。</p></div>
-      <div class="space-y-2">
+  <main class="progress-main">
+    <section class="ui-card job-overview fade-in" aria-labelledby="progress-title">
+      <div class="job-overview-top">
+        <div>
+          <h1 id="progress-title" class="job-title" x-text="progressTitle"></h1>
+          <p class="job-subtitle" x-text="viewMode === 'map' ? '协作路径已收束，复活方案已经就绪。' : '负责人正在读取项目证据并形成各自判断。'"></p>
+        </div>
+        <div class="job-progress-value"><span x-text="progress"></span>%</div>
+      </div>
+      <div class="progress-track"
+           role="progressbar"
+           aria-label="项目分析进度"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           :aria-valuenow="progress">
+        <div class="progress-fill" :style="`width:${progress}%`"></div>
+      </div>
+    </section>
+
+    <div x-show="missingJob" x-cloak class="ui-alert" role="alert">
+      <span>该任务已不在当前服务中，请重新上传项目。</span>
+      <a href="/" class="ui-button ui-button-outline">返回上传页</a>
+    </div>
+
+    <section x-show="viewMode === 'workflow'" class="workflow-section fade-in" aria-labelledby="workflow-title">
+      <div class="workflow-intro">
+        <div>
+          <div class="section-kicker">Live collaboration</div>
+          <h2 id="workflow-title" class="section-title">负责人协作工作台</h2>
+          <p class="muted-copy text-sm mt-2">每个节点都来自当前项目的可见分析过程，结论形成后会自动推进。</p>
+        </div>
+        <div class="workflow-source">
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M4 7h16M7 3h10l2 4H5l2-4ZM6 7v13h12V7"/>
+          </svg>
+          项目资料已分发
+        </div>
+      </div>
+
+      <div class="workflow-list">
         <template x-for="(leader, index) in leaders" :key="leader.id">
           <div class="work-row">
-            <div class="root-slot"><div x-show="index === 2" class="source-node">项目<br>资料</div></div>
-            <div class="connector"></div>
-            <article class="leader-card" :class="leader.state === 'active' ? 'active' : (leader.state === 'done' ? 'done' : '')">
-              <div class="flex justify-between gap-2"><div><div class="text-[11px] tracking-widest text-stone-500" x-text="leader.phase"></div><div class="text-lg font-bold mt-1" x-text="leader.name"></div></div><span class="text-xs" :class="statusClass(leader)" x-text="statusText(leader)"></span></div>
-              <div class="text-xs text-stone-500 mt-2" x-text="leader.role"></div>
+            <div class="root-slot" aria-hidden="true">
+              <div class="source-node"></div>
+            </div>
+
+            <article class="leader-card"
+                     :class="leader.state === 'active' ? 'active' : (leader.state === 'done' ? 'done' : '')">
+              <div class="leader-heading">
+                <div>
+                  <div class="leader-phase" x-text="leader.phase"></div>
+                  <div class="leader-name" x-text="leader.name"></div>
+                </div>
+                <span class="leader-state" :class="statusClass(leader)" x-text="statusText(leader)"></span>
+              </div>
+              <div class="leader-role" x-text="leader.role"></div>
             </article>
-            <div class="connector"></div>
-            <div class="thought-lane">
-              <template x-if="analysisNodes(leader).length === 0"><div class="thought-card pending text-xs">等待项目资料与上游输入</div></template>
-              <template x-for="(thought, i) in analysisNodes(leader)" :key="i"><div class="thought-card"><div class="text-[10px] tracking-wider text-stone-400">分析节点</div><div class="text-xs leading-relaxed mt-1" x-text="thought.message"></div></div></template>
-            </div>
-            <div class="connector process-connector"></div>
-            <div class="process-lane">
-              <template x-if="workSteps(leader).length === 0"><div class="process-card pending text-xs">等待可见分析过程</div></template>
-              <template x-for="(process, i) in workSteps(leader)" :key="i"><div class="process-card"><div class="text-[10px] tracking-wider text-stone-400" x-text="process.title"></div><div class="text-xs leading-relaxed mt-1" x-text="process.detail"></div></div></template>
-            </div>
-            <div class="connector conclusion-connector"></div>
-            <div class="conclusion-lane">
-              <template x-if="leader.state !== 'done'"><div class="conclusion-card pending text-xs">等待形成岗位结论</div></template>
-              <template x-if="leader.state === 'done'"><div class="conclusion-card"><div class="text-[10px] tracking-wider text-stone-400">提交岗位结论</div><div class="text-xs leading-relaxed mt-1" x-text="leader.summary || '已提交岗位结论'"></div></div></template>
+
+            <div class="leader-details">
+              <div class="lane-panel">
+                <div class="lane-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9.7 2.6a2 2 0 0 1 4.6 0l.2.7a2 2 0 0 0 1.4 1.4l.7.2a2 2 0 0 1 0 4.6l-.7.2a2 2 0 0 0-1.4 1.4l-.2.7a2 2 0 0 1-4.6 0l-.2-.7A2 2 0 0 0 8.1 9.7l-.7-.2a2 2 0 0 1 0-4.6l.7-.2a2 2 0 0 0 1.4-1.4l.2-.7Z"/><path d="M12 6v2M12 15v7M8 18h8"/></svg>
+                  分析节点
+                </div>
+                <div class="thought-lane">
+                  <template x-if="analysisNodes(leader).length === 0">
+                    <div class="thought-card pending">等待项目资料与上游输入</div>
+                  </template>
+                  <template x-for="(thought, i) in analysisNodes(leader)" :key="i">
+                    <div class="thought-card" x-text="thought.message"></div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="lane-panel">
+                <div class="lane-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/><path d="m17 17 2 2 4-4"/></svg>
+                  工作过程
+                </div>
+                <div class="process-lane">
+                  <template x-if="workSteps(leader).length === 0">
+                    <div class="process-card pending">等待可见分析过程</div>
+                  </template>
+                  <template x-for="(process, i) in workSteps(leader)" :key="i">
+                    <div class="process-card">
+                      <strong x-text="process.title"></strong>
+                      <span> · </span>
+                      <span x-text="process.detail"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="lane-panel">
+                <div class="lane-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                  岗位结论
+                </div>
+                <div class="conclusion-lane">
+                  <template x-if="leader.state !== 'done'">
+                    <div class="conclusion-card pending">等待形成岗位结论</div>
+                  </template>
+                  <template x-if="leader.state === 'done'">
+                    <div class="conclusion-card" x-text="leader.summary || '已提交岗位结论'"></div>
+                  </template>
+                </div>
+              </div>
             </div>
           </div>
         </template>
       </div>
     </section>
 
-    <section x-show="viewMode === 'map'" x-cloak class="fade-in max-w-xl mx-auto text-center py-4"><div class="text-xs tracking-[.24em] text-[var(--accent)]">COLLABORATION MINDMAP</div><h2 class="text-3xl font-black mt-3">复活方案已收束</h2><p class="text-sm text-stone-600 mt-2">按实际完成时间回放这次协作决策。</p><div class="mt-7"><template x-for="(leader,i) in orderedLeaders()" :key="leader.id"><div><div class="mind-node text-left" :class="leader.id === 'product-owner' ? 'final' : ''"><div class="flex justify-between"><div><div class="text-xs text-stone-500" x-text="leader.phase"></div><div class="font-bold mt-1" x-text="leader.name"></div></div><span class="text-xs text-stone-400" x-text="formatTime(leader.completedAt)"></span></div><div class="text-sm text-stone-600 mt-2" x-text="leader.summary || '已完成岗位结论'"></div></div><div x-show="i < orderedLeaders().length - 1" class="mind-line"></div></div></template></div><div class="mt-7"><button x-show="pipelineDone" @click="goResult()" class="rounded-lg bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white hover:opacity-90">查看复活demo →</button><div x-show="!pipelineDone" class="text-xs text-stone-400">正在等待交付产物生成…</div></div></section>
-    <div class="mt-8 text-center"><a href="/" class="text-xs text-stone-400 hover:text-[var(--accent)]">← 取消并返回首页</a></div>
+    <section x-show="viewMode === 'map'" x-cloak class="decision-wrap fade-in" aria-labelledby="decision-title">
+      <div class="ui-card decision-hero">
+        <div class="decision-icon" aria-hidden="true">
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+        </div>
+        <span class="ui-badge ui-badge-primary">协作已完成</span>
+        <h2 id="decision-title" class="section-title mt-4">复活方案已收束</h2>
+        <p class="muted-copy text-sm mt-2">六位负责人完成判断，以下是本次决策形成的完整路径。</p>
+      </div>
+
+      <div class="decision-timeline">
+        <template x-for="(leader,i) in orderedLeaders()" :key="leader.id">
+          <div class="decision-item">
+            <div class="decision-item-index console" x-text="String(i + 1).padStart(2, '0')"></div>
+            <article class="mind-node" :class="leader.id === 'product-owner' ? 'final' : ''">
+              <div class="leader-heading">
+                <div>
+                  <div class="leader-phase" x-text="leader.phase"></div>
+                  <div class="leader-name" x-text="leader.name"></div>
+                </div>
+                <span class="ui-badge console" x-text="formatTime(leader.completedAt)"></span>
+              </div>
+              <p class="muted-copy text-sm mt-3" x-text="leader.summary || '已完成岗位结论'"></p>
+            </article>
+            <div x-show="i < orderedLeaders().length - 1" class="mind-line"></div>
+          </div>
+        </template>
+      </div>
+
+      <div class="decision-action">
+        <button x-show="pipelineDone" @click="goResult()" class="ui-button ui-button-primary">
+          查看复活 Demo
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div x-show="!pipelineDone" class="muted-copy text-xs">正在等待交付产物生成…</div>
+      </div>
+    </section>
+
+    <div class="mt-6 text-center">
+      <a href="/" class="ui-button ui-button-ghost">
+        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        取消并返回首页
+      </a>
+    </div>
   </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span>再活一次 · Collaborative Recovery Workspace</span>
+      <span class="console">LIVE · <span x-text="progress"></span>%</span>
+    </div>
+  </footer>
 <script>
 function progressPage() { return {
   jobId:null, progress:0, progressTitle:'正在建立协作流程…', viewMode:'workflow', pipelineDone:false, missingJob:false, _es:null, seenEvents:new Set(),
