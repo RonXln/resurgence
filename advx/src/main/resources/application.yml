@@ -1,0 +1,38 @@
+server:
+  port: 8000
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: resurrect
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+# ============ 复活系统配置 ============
+resurrect:
+  # 上传/解压限制
+  upload:
+    max-upload-mb: 20
+    max-files: 5000
+    max-text-bytes: 5242880
+    workdir: ${java.io.tmpdir}/resurrect
+
+  # DeepSeek
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY:}
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}
+    timeout-seconds: 120
+
+  # 生图（可选，留空则用 Level 1 兜底文案卡片）
+  image:
+    api-key: ${IMAGE_API_KEY:}
+    base-url: ${IMAGE_BASE_URL:https://api.siliconflow.cn/v1}
+    model: ${IMAGE_MODEL:black-forest-labs/FLUX.1-schnell}
+
+logging:
+  level:
+    com.advx.resurrect: DEBUG

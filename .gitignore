@@ -1,0 +1,42 @@
+# ============ 密钥与本地配置 —— 绝对不要提交 ============
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+
+# ============ Java / Maven 构建产物 ============
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+
+# ============ IDE ============
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+# ============ OS ============
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============ 本地临时 ============
+temp/
+tmp/
+resurrect-work/
+uploads/

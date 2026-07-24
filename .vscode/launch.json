@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+        "type": "java",
+        "name": "ResurrectApplication",
+        "request": "launch",
+        "mainClass": "com.advx.resurrect.ResurrectApplication",
+        "projectName": "advx"
+    },
+    {
+        "type": "java",
+        "name": "运行：再活一次",
+        "request": "launch",
+        "mainClass": "com.advx.resurrect.ResurrectApplication",
+        "projectName": "resurrect",
+        "cwd": "${workspaceFolder}/advx",
+        "console": "integratedTerminal"
+    }
+]
+}
