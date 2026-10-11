@@ -4,11 +4,11 @@
 
 <img src="docs/assets/resurgence-project-card.png" alt="再活一次 · 项目复活系统" width="440" height="140">
 
-# 🔥 再活一次
+# 再活一次
+### 把被放弃的数字项目，复活成一个能演示、交付、继续生长的新产品。2026 AdventureX（中国最大黑客松）百度秒哒赛道获奖作品。
 
-### 把被放弃的数字项目，复活成一个能演示、能交付、能继续生长的新产品。
 
-上传项目压缩包。让一支 AI 产品团队读懂遗留代码、寻找仍在跳动的价值，最后交付一个可运行的复活 Demo 与完整企划。
+上传项目压缩包。让一支 AI 产品团队读懂遗留代码、寻找仍在的价值，最后交付一个可运行的复活 Demo 与完整企划。
 
 <p>
   <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21">
